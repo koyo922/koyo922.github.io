@@ -1,10 +1,7 @@
 ---
-css: koyo-markdown
-layout:     post
 title:      "在Mac上配置Vim"
 subtitle:   "解决:中英文切换,YCM 等问题"
 date:       2016-02-05
-author:     "koyo"
 header-img: "img/eyecatch_vim.jpg"
 tags:
     - vim

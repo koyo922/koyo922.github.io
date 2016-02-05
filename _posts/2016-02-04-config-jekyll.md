@@ -1,6 +1,4 @@
 ---
-layout: post
-css: koyo-markdown
 title: "Jekyll 折腾记录"
 date: 2016-02-04 22:20:00
 tags: Jekyll config Markdown
@@ -27,10 +25,9 @@ description: 花了两天时间，总算用Jekyll搭建好了一个个人博客�
 
 ##### 1) 在本机上安装Jekyll（顺便鄙视一下某社比 **GFW** 还要变态的网络代理）
 
-~~~
+{% highlight bash %}
 sudo gem install -n /usr/local/bin --http-proxy=http://proxy.xxx.co.jp:8080 jekyll
-~~~
-{:.language-bash}
+{% endhighlight %}
 
 1. 可能不需要sudo
 2. Mac OSX EI Caption (10.11.2)以上版本引入了“rootless”的概念，禁止对一部分系统目录的读写（即使sudo也不行）；可以禁用该属性或者通过`-n /usr/local/bin`的方法来将软件安装到非关键区域[^non-critical]
@@ -97,7 +94,7 @@ kramdown:
 <li>
 然后是 `vi css/koyo-markdown.css` (html中默认的`<em>`{:.language-html}标签只是斜体，不醒目)
 {% highlight css %}
-em {  // 
+em {
 	color: darkorange;
 	font-style: normal;
 }

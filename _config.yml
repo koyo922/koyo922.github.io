@@ -87,3 +87,13 @@ friends: [
 ]
 
 gems: [jekyll-paginate, jemoji]
+
+defaults:
+    -
+      scope:
+          path: ""
+          type: "posts"
+      values:
+          css: "koyo-markdown"
+          author: "koyo"
+          layout: "post"
