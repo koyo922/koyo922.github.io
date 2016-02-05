@@ -1,0 +1,52 @@
+---
+title:      "GitHub + Gollum 搭建个人Wiki"
+subtitle:   ""
+date:       2016-02-05
+tags: [Gollum, wiki, config]
+---
+
+主要参考杨志平的 *[这篇](http://www.yangzhiping.com/tech/gollum.html)* 文章。
+
+#### 配置步骤
+
+##### 1) 为自己的<username>.github.io项目开通wiki页面
+
+![open wiki](/img/in-post/gollum-wiki/gollum-wiki.png 'Title'){:style="margin:0"}
+*并通过Web端添加一个默认的Wiki页*
+![open wiki](/img/in-post/gollum-wiki/add-default-wiki-page.png)
+
+##### 2) 把wiki项目clone下来
+
+~~~ bash
+git clone git@github.com:koyo922/koyo922.github.io.wiki.git wiki
+cd wiki
+~~~
+
+##### 3) 安装，开分支，并启动Gollum
+~~~ bash
+sudo gem install golum -n /ussr/local/bin
+git checkout -b dev
+gollum --allow-uploads -r dev
+~~~
+
+##### 4) 正常使用
+按照[这篇文章](http://www.worldhello.net/gotgithub/04-work-with-others/060-wiki.html)讲的，只用最基本的Markdown功能即可。
+注意对比自己的[本地Gollum网页]和[GitHub上的Wiki页]；
+前者支持拖拽上传文件，实时预览，比较方便
+![](/img/in-post/gollum-wiki/drag-file.png)
+<small class="img-hint">拖拽文件上传</small>{:style="margin-bottom:2em"}
+而且，拖拽到的地方会自动生成相应的引用
+![](/img/in-post/gollum-wiki/dragged-into.png)
+<small class="img-hint">拖拽后自动填充的引用</small>{:style="margin-bottom:2em"}
+可以看到，相应的文件已经自动上传到相应位置了
+![](/img/in-post/gollum-wiki/uploaded.png)
+<small class="img-hint">上传完毕</small>
+
+与之类似[GitHub上的Wiki页]在编辑的时候，可以翻到预览页，也差不多；对于小白用户比较友好。
+![](/img/in-post/gollum-wiki/github-preview.png)
+
+Gollum不支持kramdown的高级用法，跟GitHub上的Wiki差不多，只支持最基本的Markdown语法， *不要试图折腾格式*
+{:.note}
+
+[本地Gollum网页]: http://localhost:4567/pages
+[GitHub上的Wiki页]: https://github.com/koyo922/koyo922.github.io/wiki/2016-02-04-config-jekyll
