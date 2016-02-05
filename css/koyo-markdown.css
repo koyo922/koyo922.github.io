@@ -1,0 +1,46 @@
+em {  // 
+	color: darkorange;
+	font-style: normal;
+}
+img.emoji {
+	box-shadow: none;
+	background-color: transparent;
+	display: inline-block;
+	margin: 2px;
+}
+.footnotes p {
+	margin-bottom: 0;
+}
+.highlight > pre > code pre {
+	color: #ddd; /* GitHub上渲染的代码结构跟本地略有不同，如果不改这里，可能看不到部分颜色的代码 */
+}
+a.footnote {
+	padding-left: 0.3em;
+	color: dodgerblue;
+}
+a.footnote:before {
+	content: "[";
+}
+a.footnote:after {
+	content: "]";
+}
+
+.note {
+	color:brown;
+	border-left: 12px solid #dc0;
+	background-color: #ffa;
+	padding: 8px;
+	margin: 0;
+}
+.note:before {
+	content: "注意:";
+	display: block;
+	font-weight: bold;
+}
+ol.note, ul.note {
+	padding-left: 30px;
+}
+
+.markdown-toc {
+	padding-bottom: 80px;
+}

@@ -1,32 +1,30 @@
 # Site settings
-title: Your Blog
-SEOTitle: 你的博客 | Your Blog
+title: Qian's Blog
+SEOTitle: 虎哥的博客 | Huhu Blog
 header-img: img/home-bg.jpg
 email: huxpro@gmail.com
-description: ""
+description: "Cool Blog"
 keyword: ""
-url: "http://huangxuan.me"              # your host, for absolute URL
+#url: "http://huangxuan.me"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 
 
 # SNS settings
 RSS: false
-weibo_username:     huxpro
-zhihu_username:     huxpro
-github_username:    huxpro
+weibo_username:     2045173904
+zhihu_username:     qian-wei-shuo
+github_username:    koyo922
 #twitter_username:  huxpro
-facebook_username:  huxpro
-
+facebook_username:  100005178853657
 
 
 # Build settings
-highlighter: pygments
+highlighter: rouge
 permalink: pretty
 paginate: 10
 exclude: ["less","node_modules","Gruntfile.js","package.json","README.md"]
 anchorjs: true                          # if you want to customize anchor. check out line:181 of `post.html`
-
 
 
 # Markdown settings
@@ -43,20 +41,17 @@ kramdown:
 #disqus_username: _your_disqus_short_name_
 
 # Duoshuo settings
-duoshuo_username: huxblog
+duoshuo_username: koyo922
 # Share component is depend on Comment so we can NOT use share only.
 duoshuo_share: true                     # set to false if you want to use Comment without Sharing
 
 
-
-
 # Analytics settings
 # Baidu Analytics
-ba_track_id: 4cc1f2d8f3067386cc5cdb626a202900
+ba_track_id: b35c404edec0879e21940eda6ea698dc
 # Google Analytics
-ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
-ga_domain: huangxuan.me
-
+ga_track_id: 'UA-73383919-1'            # Format: UA-xxxxxx-xx
+ga_domain: koyo.xyz
 
 
 # Sidebar settings
@@ -65,11 +60,9 @@ sidebar-about-description: "写写代码，做做设计，看看产品。世界�
 sidebar-avatar: /img/avatar-hux.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
-
 # Featured Tags
 featured-tags: true                     # whether or not using Feature-Tags
 featured-condition-size: 1              # A tag will be featured if the size of it is more than this condition value
-
 
 
 # Friends
@@ -91,3 +84,5 @@ friends: [
         href: "#"
     }
 ]
+
+gems: [jekyll-paginate, jemoji]
