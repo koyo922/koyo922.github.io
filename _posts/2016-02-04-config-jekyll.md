@@ -160,11 +160,13 @@ description: 花了两天时间，总算用Jekyll搭建好了个人博客；
 本地和Github都能用；代码高亮，有行号(本地支持不太好)，支持高级Markdown扩展。
 ---
 \{::options parse_block_html="true" /}
-\{::nomarkdown}</ol>{:/}
+\{\::\nomarkdown}</ol>\{\:/}
 \{\% capture m %}I want this to be in *Markdown*!\{\% endcapture %}\{\{ m | markdownify }}
 {% endhighlight %}
 
-上述反斜框（\）不是正确的Liquid语法，是我为了转义加在这里的。
+1. 上述反斜框（\）不是正确的Liquid语法，是我为了转义加在这里的。
+2. 关于`nomarkdown`的用法，见此<http://kramdown.gettalong.org/quickref.html#extensions>
+3. 关于`capture`的用法，见此<http://stackoverflow.com/questions/16517735/rdiscount-enable-parsing-markdown-within-block-html#answer-16533635>
 {:.note}
 </li>
 {:.koyo-li}
@@ -183,7 +185,8 @@ description: 花了两天时间，总算用Jekyll搭建好了个人博客；
 {% endhighlight %}
 </li>
 {:.koyo-li}
-{::nomarkdown}</ul>{:/}
+
+{::nomarkdown}</ol>{:/}
 
 ##### 5) 查看结果
 * 开两个窗口，分别执行 `jekyll build --watch` 和 `jekyll serve`

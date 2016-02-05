@@ -1,0 +1,58 @@
+---
+css: koyo-markdown
+layout:     post
+title:      "在Mac上配置Vim"
+subtitle:   "解决:中英文切换,YCM 等问题"
+date:       2016-02-05
+author:     "koyo"
+header-img: "img/eyecatch_vim.jpg"
+tags:
+    - vim
+    - config
+---
+
+<style>
+header.intro-header {
+	background-position: 90%;
+	background-size: contain;
+}
+</style>
+
+
+## 智能切换输入法
+* #### 主要参考V2EX上的 *[这篇](https://www.v2ex.com/t/45772)* 文章。
+
+> 在vim下用中文输入法一直是个蛋疼的事情，目前我知道的有两个方案：
+> <https://github.com/humiaozuzu/fcitx-status>
+> <https://code.google.com/p/vimim/>
+>
+> 两个都不是很合意，因为都需要我改变原来的输入习惯
+（第一个要用fcitx，第二个没试过，看上去挺复杂），
+> 于是自己写了一个小插件：  
+> <https://github.com/ybian/smartim>
+>
+> 这个非常类似于fcitx-status，
+> *就是用vim的autocmd命令在进入和退出insert mode的时候自动切换输入法：
+> 离开insert mode时切换到英文，方便敲normal mode下的命令；
+> 进入insert mode时切换回上次离开时的输入法。*
+> 
+> 跟fcitx-status不同的是，
+> 我写了一个单独的命令行工具来切换输入法，
+> 所以它不局限于任何特定输入法，可以用于任何你已经习惯的输入法。
+> 但是因为切换输入法的API跟平台相关，*目前仅有mac版本*。
+
+* #### 配置步骤
+	- 可以用Vundle安装
+		1. Add this line to your ~/.vimrc file: `Plugin 'ybian/smartim'`
+		2. Open vim and run `:PluginInstall`
+	- 如果你的默认键盘不是美式英语的话，需要如下设置：
+		1. 切换到自己Mac上的英语键盘
+		2. 运行 `~/.vim/bundle/smartim/plugin/im-select`得到其名称，并记下来<br>
+
+			> 可能得到类似如下结果  
+			> 1. com.apple.inputmethod.Kotoeri.Roman #日式键盘英语输入法  
+			> 2. com.aodaren.inputmethod.Qingg #清歌输入法
+		3. 在~/.vimrc中写 `let g:smartim_default = '<刚才获取到的值>'`
+
+	如果想调试vim-script，可以参考[这里](http://noscripter.github.io/2015/06/04/debugging-vim.html)
+	{:.note}

@@ -1,6 +1,7 @@
-em {  // 
+em {
 	color: darkorange;
 	font-style: normal;
+	font-weight: bold;
 }
 img.emoji {
 	box-shadow: none;
@@ -43,4 +44,8 @@ ol.note, ul.note {
 
 .markdown-toc {
 	padding-bottom: 80px;
+}
+
+blockquote > p:nth-last-child(n+2) {
+	margin-bottom: 1em;
 }
