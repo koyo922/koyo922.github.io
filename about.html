@@ -4,6 +4,19 @@ title: "About"
 header-img: "img/about-bg.jpg"
 ---
 
+<style>
+div.zh > p {
+	text-align: center;
+	font-size: 1.5em;
+	text-shadow: 1px 1px 2px darkorange;
+	margin-bottom: 0;
+}
+div.zh > img {
+	width: 50%;
+	margin-top: 0;
+}
+</style>
+
 <!-- Language Selector -->
 <select onchange= "onLanChange(this.options[this.options.selectedIndex].value)">
     <option value="0" selected> 中文 Chinese </option>
@@ -17,7 +30,11 @@ header-img: "img/about-bg.jpg"
         世界那么大，多玩玩看看。
     </blockquote>
 
-	<p>TBD</p>
+	<p class="koyo-emph">我的微信</p>
+	<img src="/img/about/wechat.jpg"/>
+
+	<p class="koyo-emph">我的LINE</p>
+	<img src="/img/about/line.jpg"/>
 </div>
 
 <!-- English Version -->
