@@ -8,7 +8,7 @@ tags: [life, japan]
 #### 参数
 * 时间： 2016年2月6日 13:00~18:30 (+0900 Asia/Tokyo)
 * 地点： 日本国神奈川県川崎市*元住吉駅*付近
-	<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3245.572798438339!2d139.65250527425516!3d35.564251460093615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60185f8115c0f6ab%3A0xb9ba231f5765435c!2z5YWD5L2P5ZCJ6aeF!5e0!3m2!1sja!2sjp!4v1454759285793" width="400" height="300" frameborder="0" style="border:0" allowfullscreen></iframe>
+	<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3245.572798438339!2d139.65250527425516!3d35.564251460093615!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x60185f8115c0f6ab%3A0xb9ba231f5765435c!2z5YWD5L2P5ZCJ6aeF!5e0!3m2!1sja!2sjp!4v1454759285793" width="400" height="300" frameborder="0" style="border:0;max-width:100%;" allowfullscreen></iframe>
 * 小伙伴： 刘蝶（东家），孙文婷，王荆泌，钱炜烁（俺）
 
 #### 流程
