@@ -14,6 +14,8 @@ description: 花了两天时间，总算用Jekyll搭建好了一个个人博客�
 {::options parse_block_html="true" /}
 
 ## 目录
+{:.no_toc}
+
 * TOC
 {:toc}
 
@@ -218,7 +220,7 @@ description: 花了两天时间，总算用Jekyll搭建好了个人博客；
 {::nomarkdown}</ol>{:/}
 
 ##### 5) 查看结果
-* 开两个窗口，分别执行 `jekyll build --watch` 和 `jekyll serve`
+* 执行 `rm -rf _site/ && jekyll serve --watch --host 0.0.0.0`
 * 在Chrome中分别观察[本地](http://localhost:4000/)和[GitHub Page](http://koyo922.github.io)[^cname]
 
 

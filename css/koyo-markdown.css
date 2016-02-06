@@ -1,7 +1,15 @@
+em, strong {
+	padding: 0.05em 0.2em;
+}
 em {
 	color: darkorange;
 	font-style: normal;
 	font-weight: bold;
+}
+strong {
+	color: #dd3322;
+	background-color: #ffdff7;
+	border-radius: 4px;
 }
 img.emoji {
 	box-shadow: none;
@@ -18,6 +26,7 @@ img.emoji {
 a.footnote {
 	padding-left: 0.3em;
 	color: dodgerblue;
+	font-weight: bold;
 }
 a.footnote:before {
 	content: "[";
@@ -48,4 +57,11 @@ ol.note, ul.note {
 
 blockquote > p:nth-last-child(n+2) {
 	margin-bottom: 1em;
+}
+
+.rot90{
+	transform: rotate(90deg);
+}
+.rot-90{
+	transform: rotate(-90deg);
 }
