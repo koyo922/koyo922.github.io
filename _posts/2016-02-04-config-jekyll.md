@@ -63,22 +63,50 @@ git push
 {::nomarkdown}<ol>{:/}
 <li>首先是 `vi _config.yml`[^inst-jemoji] [^emoji-chart]
 {% highlight yaml %}
-baseurl: ''
-timezone: +0900 #此处尤其坑爹；必填，但是不能用 Asia/Tokyo这样的字符串
-highlighter: rouge
+# Site settings
+baseurl: ""        # for example, '/blog' if your blog hosted on 'host/blog'
+timezone: +0900
 future: true
 
-duoshuo_username: koyo922 #申请方法复杂
-duoshuo_share: true
+# SNS settings
+weibo_username:     2045173904  # caution, non-VIP users maybe using number-ids
+zhihu_username:     qian-wei-shuo
+github_username:    koyo922
+facebook_username:  100005178853657
+
+# Build settings
+highlighter: rouge
 gems: [jekyll-paginate, jemoji]
 
-ba_track_id: b35c404edec0879e21940eda6ea698dc
-ga_track_id: 'UA-73383919-1'
-ga_domain: koyo.xyz
-
+# Markdown settings
+markdown: kramdown
 kramdown:
-  input: GFM # Enable GitHub Flavored Markdown (fenced code blocks)
+  input: GFM        # use Github Flavored Markdown !important
+  syntax_highlighter: rouge
   default_lang: bash
+
+# Disqus settings
+#disqus_username: _your_disqus_short_name_
+
+# Duoshuo settings
+duoshuo_username: koyo922
+
+# Analytics settings
+# Baidu Analytics
+ba_track_id: a2bb43ef451f25a0f65288a7a1189357
+# Google Analytics
+ga_track_id: 'UA-73383919-2'
+ga_domain: koyo922.github.io
+
+defaults:
+    -
+      scope:
+          path: ""
+          type: "posts"
+      values:
+          css: "koyo-markdown"
+          author: "koyo"
+          layout: "post"
 {% endhighlight %}
 </li>
 {:.koyo-li}
@@ -89,6 +117,10 @@ kramdown:
 找到注册入口 <http://duoshuo.com/create-site/>
 2. [百度分析](http://tongji.baidu.com/web/register)要专门注册*百度推广/百度联盟*帐号，[谷歌分析](https://analytics.google.com/)
 直接用Google帐号即可登录；两者都非必须。
+3. `/_include/footer.html`中有涉及highlight.js的内容；删掉，不然css代码的渲染会很丑（折叠起来）
+4. timezone(时区设置)比较坑爹，[官网](http://jekyllrb.com/docs/configuration/)说可以用
+[IANA TimeZone Database](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+中定义的时间名称；但是在本机实测只能用类似`+0900`这样的数字串
 {:.note}
 
 <li>

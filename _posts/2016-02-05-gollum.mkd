@@ -25,9 +25,13 @@ cd wiki
 ##### 3) 安装，开分支，并启动Gollum
 ~~~ bash
 sudo gem install golum -n /ussr/local/bin
-git checkout -b dev
-gollum --allow-uploads -r dev
+git checkout -b dev #签出到dev分支上
+gollum --allow-uploads -r dev #看dev分支上的内容
 ~~~
+
+1. Gollum等Ruby模块在Mac OSX 10.11上比较麻烦，详见[这篇关于Jekyll配置的文章](../../04/config-jekyll/#jekyll-gfw-)
+2. 开`dev`分支只是为了方便管理，名称无所谓。因为Gollum上的内容要*提交之后才能看到*，不想每次改动都随便提交到master分支上。
+{:.note}
 
 ##### 4) 正常使用
 按照[这篇文章](http://www.worldhello.net/gotgithub/04-work-with-others/060-wiki.html)讲的，只用最基本的Markdown功能即可。
