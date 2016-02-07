@@ -1,0 +1,91 @@
+---
+title:      "关于Jekyll中照片自动旋转的问题"
+subtitle:   "用Python库exifread解决"
+date:       2016-02-07
+tags: [python, Jekyll, config]
+---
+
+#### 问题描述
+* 一部分竖持相机拍出来的照片，直接放在Jekyll中会显示为错误的旋转方向。如图：
+![](/img/in-post/exif-rotate/wrong-rotate.png)
+* 而在 *Mac的图片预览/图片查看程序/甚至用Chrome直接打开* 时，都显示为正确方向
+![](/img/in-post/exif-rotate/preview.png)
+![](/img/in-post/exif-rotate/iPhoto.png)
+![](/img/in-post/exif-rotate/chrome.png)
+
+#### 分析
+在“百思不得姐”的情况下，果断Google之，得[高人指点][ghb]
+
+> What is that, burried on line 15, Orientation:6? According to http://www.impulseadventure.com/photo/exif-orientation.html, this piece of EXIF data was placed by the camera to denote the camera's orientation relative to the ground when the picture was taken.
+> 
+> It turns out that most "sophisticated" image viewers will read this tag and impose the necessary rotation on the encoded image to make it once again appear correct. In my case, that means the image will be rotated 90 degrees clockwise only when displayed by that viewer. *Modern web browsers do not seem to fall into this class of "sophisticated" image viewers, rendering only the image as it was encoded*, and hence telling the story of why my image was appearing to be randomly rotated by my website.
+
+那为啥在Chrome中直接打开可以显示正常呢？（走`http://`或者`file://`都正常）  
+原因不明。搜索无果，且不影响后文所述解决方案的效果。  
+暂且搁置（欢迎高人留言解答）。
+
+#### 解决
+根据上文所引用的[文章][ghb]，解决方案如下：
+
+> The solution to the problem is to re-encode the image with the correct orientation. For example, an image with a size of 640x480 needs to become the same image translated 90 degrees, giving it a new size of 480x640. Fortunately, we can easily accomplish this in Python, building off of our code from before, by transposing the image and saving it back out to disk:
+> 
+> `im.transpose(Image.ROTATE_270).save(image_file)`  
+> Just like that, we now have a correctly rotated image that less sophisticated image viewers, like web browsers, will render as intended.
+
+上面仅给出了原理和遍历EXIF属性的代码，但是解决该问题只要读取EXIF中的一个字段就够了，遍历会影响执行效率。
+确切的需求是：*从一组照片中，自动识别出竖拍的照片，并旋转回来；保证在Jekyll和其它地方都能正常显示。*
+
+为了Coding方便，引入了[`exifread`库](https://github.com/ianare/exif-py)
+
+~~~ bash
+pip3 install exifread
+~~~
+
+另外，用Python做图像处理，要先[安装`image`库](http://stackoverflow.com/questions/8863917/importerror-no-module-named-pil)
+
+~~~ bash
+pip3 install image
+~~~
+
+最后是我的Python代码
+
+~~~ python
+#!/usr/bin/env python3
+
+from PIL import Image #注意写法
+import exifread
+
+import sys
+import os
+import os.path
+
+IMAGE_EXTENSIONS = ["jpg", "png", "gif"]
+
+os.chdir(sys.argv[1]) #用第一个命令行参数指定待处理照片所在的目录
+for filename in os.listdir():
+	if not os.path.splitext(filename)[1][1:].lower() in IMAGE_EXTENSIONS:
+		continue
+	tags = exifread.process_file(open(filename, 'rb'))
+	if not 'Image Orientation' in tags:
+		continue
+
+	print(tags['Image Orientation'].printable)
+	if 'Rotated 90' in tags['Image Orientation'].printable:
+		print("done with:\t"+filename)
+		Image.open(filename).transpose(Image.ROTATE_90).save(filename)
+~~~
+
+把上述Python代码写成rotate.py，放到图片所在目录下，运行下述脚本即可
+
+~~~ bash
+cd <path-to-the-photos>
+vi rotate.py # copy the above code
+chmod 755 ./rotate.py
+./rotate .
+~~~
+1. 通过命令行参数应该是可以指定路径的，不过我没测试过
+2. 代码只针对逆时针90度拍的照片，其它角度没考虑
+3. 神奇的是：上述代码在旋转照片的同时，也将其EXIF字段“Orientation”改成了“Normal”；所以，不用担心，多次执行上述代码亦无碍。
+{:.note}
+
+[ghb]: http://gregoryhasseler.com/2015/12/09/strange-image-rotation.html
