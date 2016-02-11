@@ -69,3 +69,7 @@ blockquote > p:nth-last-child(n+2) {
 .rot-90{
 	transform: rotate(-90deg);
 }
+
+* {
+	tab-size: 4;
+}

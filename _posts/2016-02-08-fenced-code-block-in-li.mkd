@@ -1,0 +1,105 @@
+---
+title:      "Markdown语法小坑：在list item中嵌入代码块"
+subtitle:   ""
+date:       2016-02-08
+tags: [config, markdown]
+---
+
+#### 问题描述
+在kramdown扩展的markdown语法中，可以写`fenced code block`，如下
+
+~~~~ markdown
+~~~ python
+print("hello")
+~~~
+~~~~
+
+但是，当把上述`fenced code block`插入到list item时，很可能格式错乱  
+例如，以下代码就是错误的：
+
+~~~~ markdown
+1. item1
+2. item2 # bullet行首是"2. "（数字2，小数点，一个空格）
+
+	~~~ python # 代码块行首是一个tab（等于4个空格）
+	print("hello")
+	~~~
+3. item3
+~~~~
+
+<div class="note" markdown="1">
+浏览器中默认*显示*的tab是8个字宽，可以[用css修改](https://gitlab.com/gitlab-org/gitlab-ce/issues/2479)
+
+> it's a Firefox/Chrome default of 8 spaces. To change, CSS need to be explicitly set. The simplest would be to use:
+> 
+> ~~~ css
+> * {
+> 	tab-size: 4;
+> }
+> ~~~
+> to set the tab-size CSS value of *every* elements.
+</div>
+
+上述写法中，bullet是3个字宽，而代码块行首是4个字宽；解释出来是这个效果：
+
+1. item1
+2. item2
+
+	~~~ python
+	print("hello")
+	~~~
+
+
+#### 原因分析
+一言以蔽之：*bullet行首和代码块行首字宽没对齐*。[高人的解释](https://github.com/gettalong/kramdown/issues/123#issuecomment-52278780)：  
+注意星号“*”前面有一个空格。
+
+> ~~~~ markdown
+>  *  This is a list item, that has 1 space before and 2 spaces after the line marker.
+>     Therefore the needed amount of indentation is 4 spaces. Note, however, that
+> one may be lazy with paragraph text.
+> 
+>         This is an indented code block. It needs 4 spaces to be inside the list
+>         and another 4 spaces to be an actual code block and not a paragraph.
+> 
+>     ~~~
+>     This is a fenced code block. A fenced code block needs to start at the first
+>     column in the nesting level. This means that 4 spaces are needed so that
+>     the fenced code block is inside the list. More spaces and it is not recognized
+>     as fenced code block anymore. Less and it is outside the list and also not a
+>     code block.
+>     ~~~
+> 
+>      ~~~
+>      See, this "fenced code block" is indented 5 spaces and does not work.
+>      ~~~
+> 
+>    ~~~
+>    See, this "fenced code block" is indented 3 spaces and does not work.
+>    ~~~
+> ~~~~
+
+
+#### 解决方法
+把bullet行首改成“\s2.\s”或者“2.\s\s”或者“2.\t”，或者把代码块的行首改成"\s\s\s"即可。  
+总之，只要是**统一了bullet和代码块的行首字宽**，就正常显示了(注意：这里只是为了阅读方便用了正则的标记法，实际的markdown代码中当然是敲空格/tab)：
+
+代码：
+
+~~~~ markdown
+1. item1
+2.	item2 # "2.\t"，这里后面跟的是制表符
+
+	~~~ python
+	print("hello")
+	~~~
+~~~~
+
+效果:
+
+1. item1
+2.	item2
+
+	~~~ python
+	print("hello")
+	~~~

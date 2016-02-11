@@ -1,0 +1,122 @@
+---
+title:      "Pandoc折腾记录[暂缓]"
+subtitle:   "在Mac上安装/配置Pandoc，及其基本用法"
+date:       2016-02-07
+tags: [config, pandoc]
+---
+
+#### 安装
+Mac下直接敲 `brew install pandoc`  
+其它OS参考[Pandoc官网安装说明](http://pandoc.org/installing.html)
+
+#### 读官网文档
+
+* 可以通过类似`pandoc -f markdown-pipe_tables+hard_line_breaks -t html input.mkd`这样的用法来定制markdown开启/关闭扩展选项[^general-options]
+* 在`~/.pandoc/`目录下放的配置文件可以覆盖Pandoc默认的配置；而当前路径`./`的优先级则更高
+
+	> A `reference.odt`, `reference.docx`, `epub.css`, `templates`, `slidy`, `slideous`, or `s5` directory placed in this directory will override pandoc’s normal defaults.
+* 执行`echo 'eval "$(pandoc --bash-completion)"' >> ~/.zshrc`可以帮助Pandoc使用命令补全
+* Pandoc在遇到自己不理解的HTML代码或者LaTex环境变量时，
+默认行为是忽略掉。而加上`--parse-raw`选项可以让Pandoc原样输出这些内容[^reader-options]。特殊的是，当输出格式为LaTex时，默认行为就是`--parse-raw`
+* `--smart`选项可以美化破折号/长横线/省略号/一部分英文缩写
+
+	> Produce typographically correct output, converting straight quotes to curly quotes, `---` to em-dashes, `--` to en-dashes, and `...` to ellipses. Nonbreaking spaces are inserted after certain abbreviations, such as “Mr.” (Note: This option is selected automatically when the output format is `latex` or `context`, unless `--no-tex-ligatures` is used. It has no effect for `latex` input.)
+* 用类似`pandoc --filter ./caps.py -t latex`的语法可以干预Pandoc的处理流程（在输入和输出过程之间）；还有专门的Python模块`pandocfilter`可用
+* `--extract-media=DIR`选项可以从word中抽取图片放到指定目录，并自动在输出文档中更新好引用关系
+
+	> Extract images and other media contained in a docx or epub container to the path DIR, creating it if necessary, and adjust the images references in the document so they point to the extracted files. This option only affects the docx and epub readers.
+* `pandoc -s --self-contianed -c style.css in.md -o out.html`中的`-s
+--self-contained`选项可以把所有外部文件全部压缩进单个html文件中（通过js动态加载的内容除外，例如`--mathjax`），方便传递[^self-contained]。
+* `--template=FILE`可以指定所用的模板
+* `--dpi=96`指定dpi（dots per inch）
+* `--wrap=[auto|none|preserve]`指定文字折行输出方式,  `--columns=80`指定行宽多少个字符。
+
+	> Determine how text is wrapped in the output (the source code, not the rendered version). With `auto` (the default), pandoc will attempt to wrap lines to the column width specified by `--columns` (default 80). With `none`, pandoc will not wrap lines at all. With `preserve`, pandoc will attempt to preserve the wrapping from the source document (that is, where there are nonsemantic newlines in the source, there will be nonsemantic newlines in the output as well).
+* `--toc`生成目录，`--toc-depth=3`指定目录级深
+* `--highlight-style=pygments`指定代码渲染的颜色风格
+
+	> Specifies the coloring style to be used in highlighted source code. Options are pygments (the default), kate, monochrome, espresso, zenburn, haddock, and tango. For more information on syntax highlighting in pandoc, see Syntax highlighting, below.
+* `--include-in-header=FILE`可以用于在输出文件的header之后插入JS或者css文件，可以连用多次。
+
+	> Include contents of FILE, verbatim, at the end of the header. This can be used, for example, to include special CSS or javascript in HTML documents. This option can be used repeatedly to include multiple files in the header. They will be included in the order specified. Implies --standalone.
+* `--css=URL`用于引用css，可连用多次
+
+* `--include-before-body=FILE`用于在`<body>`或者`\begin{document}`后面紧跟着插入内容，用来做导航栏不错
+* `--include-after-body=FILE`用于在`</body>`或者`\end{document}`前面插入内容
+* `--number-sections`用于给*节*编号
+
+	> Number section headings in LaTeX, ConTeXt, HTML, or EPUB output. By default, sections are not numbered. Sections with class unnumbered will never be numbered, even if --number-sections is specified.
+* `--number-offset=1,4`指定章节起始编号
+
+	> Offset for section headings in HTML output (ignored in other output formats). The first number is added to the section number for top-level headers, the second for second-level headers, and so on. So, for example, if you want the first top-level header in your document to be numbered “6”, specify --number-offset=5. If your document starts with a level-2 header which you want to be numbered “1.5”, specify --number-offset=1,4. Offsets are 0 by default. Implies --number-sections.
+* `--listings` Use the listings package for LaTeX code blocks
+* `--reference-docx=FILE`输出word文件时，指定一个格式参考对象；最好是先用pandoc导出一个word文件略加修改再用于此
+
+	> Use the specified file as a style reference in producing a docx file. For best results, the reference docx should be a modified version of a docx file produced using pandoc. The contents of the reference docx are ignored, but its stylesheets and document properties (including margins, page size, header, and footer) are used in the new docx. If no reference docx is specified on the command line, pandoc will look for a file reference.docx in the user data directory (see --data-dir). If this is not found either, sensible defaults will be used. 
+* `--latexmathml[=URL]`指定LaTeXMathML.js的位置
+*	`definition list`（定义列表）的格式中，要注意在`dt`和`dd`之间不能有空行，不然就会用`<p>`把`dd`包裹起来，可能会导致难看。
+
+	~~~ markdown
+	Term 1
+	  ~ Definition 1
+
+	Term 2
+	# 如果在这里插入空行，会导致Definition 2a被<p>包裹；而Definition 2b不受影响
+	  ~ Definition 2a
+	  ~ Definition 2b
+	~~~
+* 可以用*左顶格的HTML注释*来切断列表等连续内容
+
+	> To “cut off” the list after item two, you can insert some non-indented content, like an HTML comment, which won’t produce visible output in any format:
+	> 
+	> ~~~ markdown
+	> -   item one
+	> -   item two
+	> 
+	> <!-- end of list -->
+	> 
+	>     { my code block }
+	> ~~~
+	> You can use the same trick if you want two consecutive lists instead of one big list:
+	> 
+	> ~~~ markdown
+	> 1.  one
+	> 2.  two
+	> 3.  three
+	> 
+	> <!-- -->
+	> 
+	> 1.  uno
+	> 2.  dos
+	> 3.  tres
+	> ~~~
+*	Pandoc支持`表题名(table caption)`和`简易对齐(simple table)`。如下图，"Table:"也可以简写成":"，出现在表前表后皆可。
+
+	~~~ markdown
+	  Right     Left     Center     Default
+	-------     ------ ----------   -------
+		 12     12        12            12
+		123     123       123          123
+		  1     1          1             1
+
+	Table:  table_taptions --- Demonstration of simple table syntax.
+	~~~
+
+
+<div markdown="1">
+暂缓折腾Pandoc，原因如下：
+
+1. Pandoc内容太过于庞杂，选项太多；直接读太费劲
+2. 不支持`Kramdown`，对局部样式的控制力弱
+3. 格式转换总是有损的，感觉还是先学好`LaTeX`和`reveal.js`或者`GitBook`比较划算
+4. 我已经初步折腾出一套用`Kramdown`来制作文档的方法，加一点css就可以在Chrome自带的打印功能中保持样式；
+	暂时也就凑合着够用了
+</div>{:.note}
+
+<div style="height:10em"></div>
+
+#### 脚注
+[^general-options]: General Options for Pandoc <http://pandoc.org/README.html#general-options>
+[^reader-options]: Reader Options for Pandoc <http://pandoc.org/README.html#reader-options>
+[^self-contained]: `--self-contained` Options for Pandoc <http://zhouyichu.com/misc/Pandoc.html>
+
