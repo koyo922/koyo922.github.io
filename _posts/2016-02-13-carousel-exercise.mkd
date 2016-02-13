@@ -35,7 +35,7 @@ tags: [frontend]
 ##### HTML
 
 * `m-slider`就是Carousel控件了；整个控件用JS调用，可以指定其寄居的父容器
-* 三个`slide`分别是 前一张/当前/下一张 图片
+* 三个`slide`分别是 *前一张/当前/下一张* 图片
 
 ~~~ html
 <div class="m-slider">
@@ -52,7 +52,7 @@ tags: [frontend]
 ##### CSS
 
 ~~~ css
-/*外部的样式*/
+/*全局的样式*/
 html,
 body {
 	width: 100%;
@@ -275,7 +275,7 @@ var util = (function() {
 })(util);
 ~~~
 
-##### Modal
+##### Slider
 OK，重点来了；下面是`Slider`的实现  
 
 ~~~ javascript
