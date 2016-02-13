@@ -40,7 +40,7 @@ tags: [frontend]
 直接上代码
 
 ##### HTML
-要实现的效果如图
+要实现的结构如图
 ![](/img/in-post/js-modal/html-struct.png)
 
 * `m-modal`包裹住整个控件，大小为整个视窗（稍后见CSS）
@@ -197,7 +197,7 @@ tags: [frontend]
 </head>
 ~~~
 
-鼠标经过确认按钮，变浅蓝色；经过取消按钮，变灰色
+鼠标经过*确认*按钮，变浅蓝色；经过*取消*按钮，变灰色
 ![](/img/in-post/js-modal/hover-left.png)
 ![](/img/in-post/js-modal/hover-right.png)
 
