@@ -1,6 +1,6 @@
 ---
 title:      "在Mac上配置Vim"
-subtitle:   "解决:中英文切换,YCM 等问题"
+subtitle:   "解决:中英文切换, python beautify, YCM 等问题"
 date:       2016-02-05
 header-img: "img/eyecatch_vim.jpg"
 tags:
@@ -53,3 +53,48 @@ header.intro-header {
 
 	如果想调试vim-script，可以参考[这里](http://noscripter.github.io/2015/06/04/debugging-vim.html)
 	{:.note}
+
+
+## python3 代码美化
+大概有以下几个相关工具
+
+* [PythonTidy](https://pypi.python.org/pypi/PythonTidy/): 相当老了（2012年最后更新），对`python3`支持不好
+* [PyLint](https://www.pylint.org/): 更多的是一个`代码分析`工具
+* [yapf](https://github.com/google/yapf): *Google出品的* 强大的Python代码美化工具，支持`python2`和`python3`
+
+毫无悬念，我们用`yapf`
+
+*	#### 配置步骤
+	*	用`pip3`[^python3]安装`yapf`
+
+		~~~ zsh
+		pip3 install yapf
+		~~~
+	*	在`vim`中做相应配置，`vi ~/.vimrc`
+
+		~~~ vim
+		autocmd FileType python set formatprg=yapf
+		autocmd BufWritePre *.py silent normal mzgggqG`z
+		nnoremap ,, :w<cr>
+		~~~
+	*	用法
+		- 在编写python脚本的过程中敲`,,`即可美化代码并保存
+
+	1.	如果你的开发环境跟我一样（Mac OSX 10.11），不要试图用GitHub上现成的各种基于yapf的vim插件；
+		我试过几个，都会报各种奇怪的错误
+	2.	注意上面写的是`BufWrite*Pre*`，不是*post*；所以，是先美化再写入文件
+	3.	``mzgggqG`z`` 是三个动作
+		* `mz` 标记当前位置
+		* `gg gq G` 跳到文档首行，美化到文档尾行
+		* `\`z` 回到之前标记好的位置
+	{:.note}
+
+* #### 主要参考了以下文章
+
+	+	<http://stackoverflow.com/questions/2913324/python-source-formatter-pretty-printer>: 常用的Python美化工具
+	+	<http://vim.wikia.com/wiki/Fix_indentation>: ``mzgg=G`z`` 虽然是错的，但是有启发
+	+	<http://meta.stackexchange.com/questions/82718/how-do-i-escape-a-backtick-in-markdown>: 如果想在单行markdown中转义backtick, 可以用两个或三个以上的backtick来包裹这段代码
+	+	<http://arachnoid.com/python/pybeautify_program.html>: 另一个Python美化工具`pybeautify`，有兴趣的同学可以折腾
+
+
+[^python3]: 其实这里用`pip`也是可以的；只不过，本人非常强调尽量使用`python3`及其相关工具；因为`python2`对于`UTF-8`的支持并不完整。
