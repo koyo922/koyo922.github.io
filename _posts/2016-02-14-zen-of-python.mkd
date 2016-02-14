@@ -1,0 +1,109 @@
+---
+title:      "巨蟒之禅 (The ZEN of Python)"
+subtitle:   ""
+date:       2016-02-14
+tags:
+    - philosophy
+    - python
+---
+<style>
+#poem {
+	text-align: center;
+	font: 14px/1.5 'Microsoft YaHei','Helvetica Neue',arial,sans-serif,'Hiragino Sans GB',Tahoma
+}
+#poem p {
+	margin: 0.5em;
+}
+</style>
+
+
+看过若干版本的翻译，还是今天看到的这篇最有格调；转此收藏。  
+转自[译言网](http://article.yeeyan.org/view/58498/154430)，译者：紫牛， 原作者：Tim Peters
+
+<div id="poem" markdown="1">
+Beautiful is better than ugly.  
+美胜于丑
+
+Explicit is better than implicit.  
+显胜于隐
+
+Simple is better than complex.  
+简胜于繁
+
+Complex is better than complicated.  
+繁胜于杂
+
+Flat is better than nested.  
+平胜于迭
+
+Sparse is better than dense.  
+疏胜于密
+
+Readability counts.  
+读胜于写
+
+Special cases aren\'t special enough to break the rules.  
+规则胜于特例
+
+Although practicality beats purity.  
+实用胜于单纯
+
+Errors should never pass silently.  
+告错胜于沉默
+
+Unless explicitly silenced.  
+沉默胜于吵闹
+
+In the face of ambiguity, refuse the temptation to guess.  
+拒绝胜于猜测
+
+There should be one\-- and preferably only one \--obvious way to do it.  
+唯一胜于显然
+
+Although that way may not be obvious at first unless you\'re Dutch.  
+显然不是荷兰
+
+Now is better than never.  
+现在胜于永不
+
+Although never is often better than \*right\* now.  
+永不胜于匆猝
+
+If the implementation is hard to explain, it\'s a bad idea.  
+凡值得说,必易于说
+
+If the implementation is easy to explain, it may be a good idea.  
+反之则不然
+
+Namespaces are one honking great idea \-- let\'s do more of those!  
+名可名, 请常名
+</div>
+
+## 背景介绍
+
+["Python之禅"](https://www.python.org/dev/peps/pep-0020/)是流行于`Python`社区的一首诗，
+简洁/深刻/风趣地描述了Python语言及其整个开发生态的设计哲学。  
+在python命令行中，敲`import this`即可看到该诗
+
+~~~
+Beautiful is better than ugly.
+Explicit is better than implicit.
+Simple is better than complex.
+Complex is better than complicated.
+Flat is better than nested.
+Sparse is better than dense.
+Readability counts.
+Special cases aren't special enough to break the rules.
+Although practicality beats purity.
+Errors should never pass silently.
+Unless explicitly silenced.
+In the face of ambiguity, refuse the temptation to guess.
+There should be one-- and preferably only one --obvious way to do it.
+Although that way may not be obvious at first unless you're Dutch.
+Now is better than never.
+Although never is often better than *right* now.
+If the implementation is hard to explain, it's a bad idea.
+If the implementation is easy to explain, it may be a good idea.
+Namespaces are one honking great idea -- let's do more of those!
+~~~
+
