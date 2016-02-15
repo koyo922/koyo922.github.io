@@ -7,4 +7,10 @@ sed -Ei ".backup" \
 	-e "s/我把主动工作时间/我主动把工作时间/g" \
 	$1
 
+echo "========== the diff START =========="
+
 diff $1.backup $1
+
+
+echo "========== the diff END =========="
+echo "========== you can run 'rm -rf $1.backup' after confirm it =========="
