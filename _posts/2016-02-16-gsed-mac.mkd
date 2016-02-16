@@ -1,0 +1,85 @@
+---
+title:      "用GNU-sed给Markdown文本打补丁"
+subtitle:   "方法说明 & 各种坑的提示"
+date:       2016-02-16
+tags:
+    - config
+    - sed
+    - wget
+    - Mac
+---
+
+昨天拜读了某位大牛的文章，发现有拼写错误；看样式估计是用Markdown写的，就试图用`sed`给打补丁。
+在此，总结一下所用到的方法和技术上的几个小坑。
+
+### Mac上的`sed`
+Mac上的`sed`跟常用的Linux发行版（如Ubuntu）上的sed不同；前者属于标准的`POSIX sed`，后者属于增强型的`GNU sed`。
+*增强* 体现在哪里呢？支持的参数/选项不同，功能更强大……
+
+重点在于 —— *`GNU sed`用的是我们所习惯的标准正则语法，而Mac自带的`POSIX sed`不是！！！*  
+e.g.  
+空白字符（空格/制表符）在`GNU sed`中表示为`\s`  
+而在`POSIX sed`中却表示为坑爹的`[[:space:]]`
+
+果断换`GNU-sed`；参考[这里](http://shunirr.hatenablog.jp/entry/2012/12/19/160544)
+
+~~~ zsh
+brew install -y gnu-sed
+echo "alias sed=gsed" >> ~/.zshrc
+~~~
+
+### sed多行匹配
+`sed`本质上是个“流编辑器”，换句话说：是*一行一行*地处理文本的。
+因此，并没有特别优雅的方法来解决这个问题。
+[stackexchange上的这篇文章](http://unix.stackexchange.com/questions/114943/can-sed-replace-new-line-characters)提供了一种基于`标签`的解决办法：
+
+~~~ zsh
+sed -i ':a;N;$!ba;s/\n/,/g' test.txt
+~~~
+
+解释一下：
+
+> 1. `:a` create a label via :a
+> 1. `;N` append the current and next line to the pattern space via N
+> 1. `$!ba` if we are before the last line, branch to the created label $!ba ($! means not to do it on the last line (as there should be one final newline)).
+> 1. `s/\n/,/g` finally the substitution replaces every newline with a comma on the pattern space (which is the whole file).
+
+### `colordiff -u`
+Mac上自带的`diff`样式比较丑，可以换成`colordiff`；另外，开`-u`选项可以渲染成类似`git diff`的样式。ref <http://qiita.com/catatsuy/items/8bafef2a60762a1c9f0f>
+
+~~~ zsh
+brew install colordiff
+echo "alias diff=colordiff -u" >> ~/.zshrc
+~~~
+
+### 脚本
+OK，有了上述基础；可以写脚本了。
+
+~~~ bash
+#!/bin/bash
+
+gsed -i.backup \
+	-e "s/电活/电话/g" \
+	-Ee ":a;N;$bash;s/使\s{2,}\n\s*用/使用/g" \
+	-e "s/使<br ?\/?>用/使用/g" \
+	$1
+
+echo "========== diff START =========="
+colordiff -u $1.backup $1
+echo "========== diff END =========="
+
+echo "========== you can run 'rm -rf $1.backup' after confirm it =========="
+~~~
+
+1.	看起来比较奇怪的那一行是在处理“两个空格加一个回车”的模式，在markdown中这个会被转成`<br />`
+2.	`gsed`中的`-i`选项是直接跟后缀名的，中间不用加空格
+3.	选项`-E`是打开高级扩展；有时候要加上（在`zsh`中直接用好像又不支持，很奇怪）
+4.	`$!ba`不知为何自动变成了`$bash`；但是不影响结果（而且，直接写`$!ba`反而会出错）
+
+### 基于`wget`做自动运行
+把补丁脚本push到网上，然后把下列命令发给作者即可。  
+这里我用的是`/dev/stdin`，应该也可以用`xargs`之类的方法吧。初步试了试，好像比较麻烦，就算了。
+
+~~~ zsh
+wget http://koyo922.github.io/share/patch_time_friend.sh -O- | bash /dev/stdin <your_source_file.md>
+~~~
