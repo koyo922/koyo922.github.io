@@ -1,0 +1,194 @@
+---
+title:      "kramdown单机写作环境配置"
+subtitle:   "打印色彩保留，半屏适应，样式调整"
+date:       2016-02-20
+tags:
+    - config
+    - Mac
+    - kramdown
+---
+
+之前有一篇文章已经介绍过基于Kramdown+Jekyll+GitHub Pages的博客搭建。
+而在公司里，有些内容（例如技术总结）是不允许放到公网上的；这就需要在单机或LAN中搭建Kramdown写作环境。
+
+本来用Jekyll开`localhost:8000`也是可以的；可惜Jekyll依赖于高版本的Ruby，而公司电脑是Ubuntu14.04，折腾起来比较麻烦；
+而且Jekyll框架会引入一些与文档内容无关，而与博客机制有关的信息，导出的HTML不够纯粹。
+
+OK，言归正传；看配置。
+
+### 单机kramdown的写法
+
+#### 目录结构
+
+~~~ tree
+. # 当前目录是~/learn/repos/kramdown/
+|
+├── AGL_exp.mkd  # mkd文件直接写在顶层
+├── build  # 生成的HTML在这里
+├── css # 样式放在这里
+│   ├── bootstrap-noprint.css
+│   ├── github.css
+│   ├── hux-blog.css
+│   ├── koyo-kramdown.css
+│   ├── koyo-markdown.css
+│   └── syntax.css
+├── img # 图片、资源文件放这里
+├── js # 脚本放这里
+│   └── koyo-kramdown.js
+├── memory_cinema.mkd
+└── python_http_git.mkd
+~~~
+
+#### markdown结构
+就跟正常的写法差不多；只是开头要手动地插入一些样式和脚本。
+
+~~~ markdown
+<meta charset="UTF-8" />
+<link href="../css/bootstrap-noprint.css" rel="stylesheet" />
+<link href="../css/syntax.css" rel="stylesheet"/>
+<link href="../css/hux-blog.css" rel="stylesheet"/>
+<link href="../css/koyo-markdown.css" rel="stylesheet"/>
+<link href="../css/koyo-kramdown.css" rel="stylesheet"/>
+<script type="text/javascript" src="../js/koyo-kramdown.js"></script>
+{::options parse_block_html="true" /}
+{::options parse_span_html="true" /}
+
+# title
+{:.no_toc}
+
+## TOC
+{:.no_toc}
+
+* toc
+{:toc}
+
+<div style="height:5em"></div>
+
+## chaper 1
+
+...
+...
+...
+
+<div style="height:5em"/>
+
+## Footnotes
+[^proxy]: ... has the following characters:
+	
+	1. You need to set ... as the proxy server for all Internet communications,
+		do it in the Ubuntu GUI.
+	2.	To use `git`(or anything built upon `git`, such as `repo` ), do the following:
+		...
+	{:type="i"}
+[^kiss]: "Keep it simple, stupid" <https://en.wikipedia.org/wiki/KISS_principle#In_software_development>
+~~~
+
+#### 关于插入的样式和脚本
+样式和脚本文件可从这里下载：<http://koyo922.github.io/share/kramdownStandalone/>
+{:.note}
+
+<div style="height:1em"></div>
+
+| 文件 | 说明 |
+|`bootstrap-noprint.css`| 把标准的`bootstrap.css`里关于`@media print`的内容注释掉；保持打印时的样式不变。|
+|`koyo-markdown.css`|自定义样式，跟Jekyll里用的一样|
+| `koyo-kramdown.css`|我也觉得这个名字没起好；我的本意是把kramdown单机写作环境用到的特殊的样式跟基础样式分开；单纯就是为了解耦，跟`css/koyo-markdown.css`分开。|
+|`github.css` | <https://gist.github.com/andyferra/2554919> |
+|`hux-blog.css` | 从HUX Blog的Jekyll框架里拷出来的|
+|`syntax.css` | 同上|
+|`koyo-kramdown.js` | 在单机环境中提供auto-anchor功能|
+
+
+说明：  
+`css/koyo-kramdown.css`的内容如下：
+
+~~~ css
+body {
+	-webkit-print-color-adjust: exact !important;
+}
+
+a {
+	color: #337ab7; //restore bootstrap-default from hux
+}
+
+//由于不用Jekyll了，容器直接就是<body>
+//全屏和半屏时分别写样式
+@media screen and (min-width: 1200px) {
+	body {
+		margin: 50px 25%;
+	}
+}
+
+@media screen and (max-width: 1000px) {
+    body {
+		margin: 2em 5%;
+    }
+}
+
+//专门针对打印样式优化
+@media print {
+   pre,
+   blockquote {
+     page-break-inside: avoid;
+   }
+   img {
+     page-break-inside: avoid;
+   }
+   img {
+     max-width: 100% !important;
+   }
+   h2,
+   h3 {
+     page-break-after: avoid;
+   }
+}
+~~~
+
+`js/koyo-kramdown.js`内容如下：  
+就是异步加载一个js，然后调用它，来实现auto-anchor
+
+~~~ js
+function async(u, c) {
+	var d = document, t = 'script',
+		o = d.createElement(t),
+		s = d.getElementsByTagName(t)[0];
+	o.src = u;
+	if (c) {
+		o.addEventListener('load', function (e) { c(null, e); }, false);
+	}
+	s.parentNode.insertBefore(o, s);
+}
+
+async("http://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+	anchors.options = {
+		visible: 'always',
+		placement: 'right',
+		icon: '#'
+	};
+	anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+})
+~~~
+
+另外，还要在`~/.vimrc`里面加两行，双击逗号就保存markdown文件并自动生成相应的网页到`build/`目录下。
+
+~~~ vimrc
+nnoremap ,, :w<cr>
+
+autocmd BufWritePost *.{md,mdown,mkd,mkdn,markdown,mdwn} exe ":!kramdown --syntax-highlighter rouge %:p > build/%.html" | redraw
+~~~
+
+### LAN中的配置
+
+~~~ zsh
+# 把原始仓库软链接到/var/www/或类似目录，方便发布管理
+mkdir -p /var/www/
+cd /var/www/
+ln -s ~/learn/repos/ repos
+
+# 进去，开HTTP服务器
+cd repos/
+python3 -m http.server 8000
+~~~
+
+*	看文章用浏览器访问 <http://localhost:8000/repos/kramdown/build/...>
+*	看原始markdown，用`git clone http://your-ip:8000/repos/kramdown/.git/`

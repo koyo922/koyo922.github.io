@@ -1,0 +1,37 @@
+body {
+	-webkit-print-color-adjust: exact !important;
+}
+
+a {
+	color: #337ab7; //restore bootstrap-default from hux
+}
+
+@media screen and (min-width: 1200px) {
+	body {
+		margin: 50px 25%;
+	}
+}
+
+@media screen and (max-width: 1000px) {
+    body {
+		margin: 2em 5%;
+    }
+}
+
+
+@media print {
+   pre,
+   blockquote {
+     page-break-inside: avoid;
+   }
+   img {
+     page-break-inside: avoid;
+   }
+   img {
+     max-width: 100% !important;
+   }
+   h2,
+   h3 {
+     page-break-after: avoid;
+   }
+}

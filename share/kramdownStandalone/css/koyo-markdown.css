@@ -1,5 +1,5 @@
 *{
-	word-break: break-word;
+	word-break: break-all;
 }
 
 em, strong {
@@ -62,7 +62,6 @@ ol.note, ul.note {
 blockquote > p:nth-last-child(n+2) {
 	margin-bottom: 1em;
 }
-
 .rot90{
 	transform: rotate(90deg);
 }
@@ -70,10 +69,26 @@ blockquote > p:nth-last-child(n+2) {
 	transform: rotate(-90deg);
 }
 
+p {
+	margin: 1em 0;
+}
+
+h1 {
+	text-align: center;
+	margin-bottom: 2em;
+}
+img {
+	max-width: 100%;
+}
+
+dd {
+	padding-left: 2em;
+}
+
 * {
 	tab-size: 4;
 }
 
-div.highlighter-rouge {
-	margin-top: 1.2em;
+ul, ol, li {
+	margin: 0;
 }
