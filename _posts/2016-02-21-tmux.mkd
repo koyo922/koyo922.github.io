@@ -1,0 +1,209 @@
+---
+title:      "tmux入坑指南"
+subtitle:   "tmux基本用法，基于TPM的插件管理"
+date:       2016-02-19
+tags:
+    - config
+    - Mac
+    - tmux
+---
+
+[tmux](https://tmux.github.io/)是一个非常好用的终端分屏工具。个人总结其优点如下：
+
+*	支持vim流的窗口切换和内容拷贝；纯键盘，效率高
+*	C/S架构，用在远程服务器上，可以使当前进程不依赖于ssh，省掉写`nohup`[^nohup]
+*	工作状态随时随地可恢复[^restore]
+
+*强烈推荐学习并使用tmux* ，只需要30分钟左右就可以上手了；
+对于经常泡在终端下的码农来说，此工具几乎每天必用，可以大大提高工作效率。
+
+### tmux安装
+Mac用户直接brew安装即可。其它系统也可用`sudo apt-get install tmux`或类似命令。
+
+记得用`tmux -V`确认一下版本 >= 1.9；低于这个版本的话，一键全屏用不了，也不支持插件管理工具TPM。
+{:.note}
+
+~~~ zsh
+brew install tmux
+tmux -V
+# tmux 2.0
+~~~
+
+### tmux基础用法
+安装好tmux之后，在shell中直接敲`tmux`即可启动一个tmux会话。
+
+此时，我们就已经进入了tmux环境。
+敲`<ctrl+b> %`可以把屏幕纵向切分成两列，
+敲`<ctrl+b> "`可以把屏幕横向切分成两行。
+这里的`<ctrl+b>`就是tmux中的*前缀键*了。通过这个前缀键，tmux就知道后面跟的那个字符是作为tmux命令传递的，
+而不是直接传递给tmux会话里面的shell或任何程序。
+
+前缀键可以通过`~/.tmux.conf`来修改，但是个人不建议改。  
+如果觉得`<ctrl>+b`跟vim里的“后翻页”冲突了，
+可以在vim中使用`<ctrl>+u`“后翻半页”来凑合着用；不到万不得已，不要更改tmux的默认前缀键。
+
+**关于更多的命令用法，请参考[这篇](http://kumu-linux.github.io/blog/2013/08/06/tmux/)**，
+请忽略该文中关于 更改前缀键和`.tmux.conf`的部分。
+
+`.tmux.conf`，可以类比为`.vimrc`；用来控制tmux的行为。  
+我先提供以下内容作为`~/.tmux.conf`的最基本配置。如果不折腾，完全够用了；
+关于 utf8支持/状态栏之类的设置，可以通过`tmux-sensible`插件来引入（后文有说明）。
+
+~~~ tmux
+set-window-option -g mode-keys vi       # 复制模式（我更习惯称为“选择模式”）中的默认键盘布局模仿vi
+
+bind h select-pane -L                   # h 等于向左移动光标
+bind j select-pane -D                   # j 向下移动光标
+bind k select-pane -U                   # k 向上移动光标
+bind l select-pane -R                   # l 向右移动光标
+~~~
+
+如果有兴趣，还可以在`~/.zshrc`中添加以下内容；使得进入shell时，自动 挂载/启动 到tmux。
+
+~~~ zsh
+# 判断是否已有开启的tmux会话，没有则开启
+if which tmux 2>&1 >/dev/null; then
+    test -z "$TMUX" && (tmux attach || tmux) #这里原文写的是tmux_init，不好使
+fi
+~~~
+
+本文始终只考虑单用户的情况；
+如果一台服务器上有多人分别开启tmux会话，情况会变得复杂，
+上述脚本可能会attach到别人的tmux会话上。
+{:.note}
+
+
+### TPM（Tmux Plugin Manager）安装
+TPM是一个很好用的Tmux插件管理器，概念上类似于管理vim插件的`Vundle`或者`Pathogen`。  
+参考[TPM主页](https://github.com/tmux-plugins/tpm)，安装步骤如下：
+
+1.	把TPM项目clone下来
+
+	~~~ zsh
+	git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+	~~~
+
+2.	将以下内容追加到`~/.tmux.conf`底部：
+
+	~~~ zsh
+	# List of plugins
+	set -g @plugin 'tmux-plugins/tpm'
+	set -g @plugin 'tmux-plugins/tmux-sensible'
+
+	# Other examples:
+	# set -g @plugin 'github_username/plugin_name'
+	# set -g @plugin 'git@github.com/user/plugin'
+	# set -g @plugin 'git@bitbucket.com/user/plugin'
+
+	# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+	run '~/.tmux/plugins/tpm/tpm'
+	~~~
+
+3.	重载tmux配置文件，生效。
+
+	~~~ zsh
+	$ tmux source ~/.tmux.conf
+	~~~
+
+
+### 基于TPM的Tmux插件管理
+`vi ~/.tmux.conf`，看注释就很清楚了。  
+这里先熟悉一下步骤，后文会推荐几个好用的插件：
+
+1.	改类似`set -g @plugin '...'`这样的行，添加你想要的插件
+2.	在终端中敲`tmux`启动tmux
+2.	在tmux环境中敲`<prefix>+I`来安装相应的插件（`ls ~/.tmux/plugins/`可以看到抓下来的插件）
+	
+	*	`<prefix>`就是tmux中*前缀键*
+	*	注意`I`是大写
+3.	如果要升级所有插件，敲`<prefix> + U`
+4.	如果要干掉某个插件，先从`~/.tmux.conf`中删掉对应的行，然后敲`<prefix> + alt + u`即可
+
+
+
+### tmux插件的使用
+重点介绍以下几款插件
+
+####	[tmux-plugins/tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect)
+
+功能：保存tmux会话状态（包括面板布局，据说甚至支持恢复vim会话）；重启机器仍可恢复
+
+配置：`vi ~/.tmux.conf`，添加以下几行
+
+~~~ tmux
+set -g @plugin 'tmux-plugins/tmux-resurrect' #安装tmux-resurrect
+set -g @resurrect-capture-pane-contents 'on' #恢复面板内容
+set -g @resurrect-strategy-vim 'session' #恢复vim会话状态
+~~~
+
+说明：
+其中，恢复vim会话状态那个功能基于一个叫[vim-obsession](https://github.com/tpope/vim-obsession)的vim插件，试过貌似不好使。
+其它的样式恢复得还不错。
+另外还有个实验性的功能[恢复bash历史](https://github.com/tmux-plugins/tmux-resurrect/blob/master/docs/restoring_bash_history.md)，
+爱折腾的可以试试；我用得不多。
+还有个与此功能类似的tmux插件，叫[tmux-continuum](https://github.com/tmux-plugins/tmux-continuum)，也可以看看。
+
+用法：
+
+*	`<prefix> + <ctrl-s>`：保存tmux状态
+*	`<prefix> + <ctrl-r>`：恢复tmux状态
+
+####	[tmux-plugins/tmux-open](https://github.com/tmux-plugins/tmux-open)
+
+功能：打开/编辑 在tmux中选中的 文件/URL
+
+配置：`vi ~/.tmux.conf`，添加以下几行
+
+~~~ tmux
+set -g @plugin 'tmux-plugins/tmux-open' #安装tmux-open
+set -g @open 'x' #用'x'代替默认的'o' （tmux开启了类似vim的选择模式下，o是跳到选区的另一头）
+set -g @open-editor 'C-x' #用'<ctrl>-x'代替默认的'<ctrl-o>'
+~~~
+
+用法：
+
+1.	在tmux下敲`<prefix> + [`进入tmux的选择模式（类似于vim的v模式），高亮选择一段URL或者本地文件地址
+2.	敲`x`可以对这段高亮内容执行`open`；敲`<ctrl+x>`可以对其执行`$EDITOR`（所以，要先`export EDITOR=vim`；我用得少，没设）
+
+####	[tmux-plugins/tmux-yank](https://github.com/tmux-plugins/tmux-yank)
+
+功能：将tmux选择的内容拷贝到系统剪切板
+
+配置：
+
+1.	如果你的Mac系统>=OSX 10.10(Yosemite)，可以使用内置的`pbcopy`，跳过这一步。
+	否则，请执行`brew install reattach-to-user-namespace`
+2.	`vi ~/.tmux.conf`，添加以下几行
+
+	~~~ tmux
+	set -g @plugin 'tmux-plugins/tmux-yank' #安装tmux-yank
+	set -g @shell_mode 'vi' #兼容shell的vi模式
+	~~~
+
+说明：  
+shell可以使用vi模式以方便编辑，`bash`中的配置[见此](http://blog.sanctum.geek.nz/vi-mode-in-bash/)。  
+`oh-my-zsh`中自带`vi-mode`插件，只需编辑`~/.zshrc`，在plugins一行，加入`vi-mode`即可。
+`vi-mode`的用法[见此](https://github.com/robbyrussell/oh-my-zsh/tree/master/plugins/vi-mode)
+
+~~~ zshrc
+plugins=(git brew osx pip vi-mode)
+~~~
+
+插件的用法如下：  
+普通模式下：
+
+*	`<prefix> + y`：把当前命令行的内容拷到剪切板（支持`bash`,`zsh`,`python`解释器；稍加配置还支持`vim`命令栏）
+*	`<prefix> + Y`：把当前面板的路径拷到剪切板
+
+选择模式下：
+
+*	`y`：把当前选中的内容拷到剪切板
+*	`Y`：把当前选中的内容拷到剪切板，然后再粘到命令行（退出tmux选择模式后会看到`zsh`提示符后已经粘好内容了，直接敲回车就可以执行）
+
+### 脚注
+
+[^nohup]:	平常用ssh连接到远程服务器之后，所开启的bash都是ssh的子进程；
+	一旦网络不稳定或者下班回家了，ssh连接就要断开；父进程挂掉，bash里跑的命令都会挂掉。所以需要`nohup`
+
+[^restore]:	只要服务器不关机，随时随地ssh上去，敲个`tmux attach`就能看到跟上一次完全相同的工作环境/窗口布局。
+	即使机器要重启/关机，也可以借助一些tmux插件来保存和恢复终端环境。
