@@ -84,7 +84,7 @@ OK，言归正传；看配置。
 ~~~
 
 #### 关于插入的样式和脚本
-样式和脚本文件可从这里下载：<http://koyo922.github.io/share/kramdownStandalone/>
+样式和脚本文件可从这里下载：<http://koyo922.github.io/share/kramdownStandalone/all.tar.gz>
 {:.note}
 
 <div style="height:1em"></div>
