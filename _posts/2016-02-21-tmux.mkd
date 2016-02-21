@@ -1,7 +1,7 @@
 ---
 title:      "tmux入坑指南"
 subtitle:   "tmux基本用法，基于TPM的插件管理"
-date:       2016-02-19
+date:       2016-02-21
 tags:
     - config
     - Mac
