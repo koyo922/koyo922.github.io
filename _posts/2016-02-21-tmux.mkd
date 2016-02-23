@@ -51,6 +51,8 @@ tmux -V
 
 ~~~ tmux
 set-window-option -g mode-keys vi       # 复制模式（我更习惯称为“选择模式”）中的默认键盘布局模仿vi
+set-window-option -g aggressive-resize on       # 开启尽可能大的屏幕，除非另一个client也正在查看
+# 此外，用 `tmux detach -a`也可以；踢掉除当前以外的所有session
 
 bind h select-pane -L                   # h 等于向左移动光标
 bind j select-pane -D                   # j 向下移动光标
