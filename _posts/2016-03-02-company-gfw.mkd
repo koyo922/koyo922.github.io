@@ -1,0 +1,448 @@
+---
+title:      "绕过公司的HTTP代理，科学上网"
+subtitle:   "用nc帮助ssh穿透社内http代理，然后用ssh做各种端口转发/代理，基于curl做断点续传"
+#date:       2016-03-01
+tags:
+    - config
+    - proxy
+    - ssh
+---
+
+<style>
+.bigfont{
+	font-size: 1.5em;
+}
+</style>
+
+如果你有空（10分钟左右），可以完整地听我讲段子……  
+如果只想马上找到解决方案，请点击[这里]。
+{:.note}
+
+## 背景交代
+以前在国内的时候，倍受方院士的关怀，享受了几年*GFW*的保护；  
+偶尔为了访问一些“不存在”的网站，也用过代理服务器[^domestic-proxy]。
+
+现在来了岛国，本以为自由了；
+可是纠结的日本公司为了贯彻所谓的「徹底した情報管理」，搞出了一个*社内的HTTP代理服务器*；
+所有走公网的流量都必须经过这个代理。
+这是个应用到操作系统级别的全局代理；公司内所有PC都必须设置，不设就没法访问公网。
+而且，这个代理的规则变态到*令人发指*的程度，比GFW有过之而无不及：
+
+1.	所有明文的数据都要经过virus-check；  
+	即：下载文件时先缓冲到代理服务器，经过漫长的check完了之后，再下发到我们的PC。  
+	如果文件稍大(>=40MB?)，我们的`wget/curl/bitback`基本都要超时。
+	而且，经常无缘无故地把一些文件判为病毒（GNU官网上的gcc都被误判好几次）……
+2.	只开放80(http)和443(https)端口  
+	这就意味着我们没法愉快地用`ssh`和`git over ssh`了
+3.	禁ICMP流量（`ping`用不了）
+4.	封一部分域名（e.g. 中国淘宝……）
+5.	所有访问记录留日志
+
+尤其是前两条！ **严重影响了正常的开发工作**
+
+公司那帮所谓的技术支持人员，只会死守规矩，全社一刀切 —— 不论你是文秘还是码农。  
+入社十年的先辈表示：反映过多次，然并卵——那帮家伙只会说“公司规定，一视同仁”。  
+唯一变通的办法就是：6楼有个小黑屋，里面有个不走代理的公网插口专供那个神秘的部门使用；
+可以找人带我进去，然后千恩万谢/诚惶诚恐地「すみませんでした」
+
+靠！哥只是想好好工作而已，还得这么麻烦！？
+有没有天理？
+![](/img/in-post/company-proxy/eee.png)
+
+每次我要下载稍大一点的安装包，就得去6楼跟太君低声下气地求情。  
+此种情形深深地伤害了我等方院士栽培出来的天朝码农！
+
+是可忍熟不可忍？！  
+哥决定——**fxxk个斑马养滴代理！**{:.bigfont}
+![](/img/in-post/company-proxy/nidouwo.jpg)
+
+## 原理说明
+为了尽可能还原我的思考&搜集资料过程，
+以下内容大致按照时间顺序记录（包括失败的方法）。  
+如果遇到读不懂的地方不用纠结，下文会有详细说明。  
+另外，**不要急于敲命令**；建议读完本文，再动手配置。
+{:.note}
+
+我最开始读到的是这篇文章 <https://daniel.haxx.se/docs/sshproxy.html>  
+此文内容比较完备，可惜不够详尽。  
+下面仅以其作为技术框架，说明整体的技术方案；
+**其中用到的各项技术会在后文逐一详解，如遇读不懂的，请暂时搁置。**
+
+文中推荐我们用`corkscrew`/`nc`来搭梯，帮助`ssh`越过 http-proxy。
+然后直接用`ssh -D`来做`socks5代理`；  
+或者`ssh -L`做端口正向转发，把VPS上的http proxy端口转发到本机。原理如图：
+![](/img/in-post/company-proxy/sshproxy.jpg)
+
+用`corkscrew`/`nc`方案时，需要社内http-proxy一定程度上的“配合”，  
+即：允许向VPS上的`sshd`端口（默认是22，可以添加/修改）发HTTP CONNECT报文[^http-connect]  
+当社内http-proxy不配合时，可以尝试用`httptunnel`软件来两头搭梯。
+
+以上就是整体的技术架构（相当于一个overview），是不是有点乱？
+没关系，下面我将按顺序针对每个工具逐一详解。
+
+## ssh over http-proxy
+上面提到的第一步就是让我们能`ssh`到VPS上。
+如果社内http-proxy非常简单，只是过滤了22号端口，那很好办：
+在VPS上执行`vi /etc/ssh/sshd_config`，添加一个443端口用于`ssh`。
+
+~~~ config
+#...
+Port 22
+Port 443
+#...
+~~~
+
+然后`sudo service sshd restart`，  
+然后在客户端`ssh root@<VPS-name> -p 443`即可。
+
+当然，以上是理想情况；一般没那么简单，
+我们往往还是需要一把梯子来帮助`ssh`穿越社内http-proxy。  
+这里常用的梯子有`corkscrew`和`nc`。
+
+### corkscrew
+参考此文 <https://www.52os.net/articles/ssh-over-proxies.html>
+
+~~~ zsh
+sudo apt-get install corkscrew
+ssh root@<target-ssh-server-ip> -o "ProxyCommand corkscrew <proxy-ip> <proxy-port> %h %p"
+~~~
+
+说明：
+
+*	`ssh`有个`-o`选项，可以临时地指定一些参数。  
+	如果要长期生效，可以把`-o`的内容写到`~/.ssh/config`[^home-file]  
+
+	> ~~~ man
+	> ...
+	> -o option
+	>         Can be used to give options in the format used in the configura-
+	>         tion file.  This is useful for specifying options for which there
+	>         is no separate command-line flag.  For full details of the
+	>         options listed below, and their possible values, see
+	>         ssh_config(5).
+	> 
+	>               ...
+	>               ProxyCommand
+	>               ...
+	> ...
+	> ~~~
+	> 
+	> --- `man ssh`
+	
+*	可以在`ProxyCommand`中使用`%h``%p`来引用外层`ssh`的目标IP和端口。
+	
+	> ~~~ man
+	> ...
+	> ProxyCommand
+	>         Specifies the command to use to connect to the server.  The com-
+	>         mand string extends to the end of the line, and is executed using
+	>         the user's shell `exec' directive to avoid a lingering shell
+	>         process.
+	> 
+	>         In the command string, any occurrence of `%h' will be substituted
+	>         by the host name to connect, `%p' by the port, and `%r' by the
+	>         remote user name.  The command can be basically anything, and
+	>         should read from its standard input and write to its standard
+	>         output.  It should eventually connect an sshd(8) server running
+	>         on some machine, or execute sshd -i somewhere.  Host key manage-
+	>         ment will be done using the HostName of the host being connected
+	>         (defaulting to the name typed by the user).  Setting the command
+	>         to ``none'' disables this option entirely.  Note that CheckHostIP
+	>         is not available for connects with a proxy command.
+	> 
+	>         This directive is useful in conjunction with nc(1) and its proxy
+	>         support.  For example, the following directive would connect via
+	>         an HTTP proxy at 192.0.2.0:
+	> 
+	>            ProxyCommand /usr/bin/nc -X connect -x 192.0.2.0:8080 %h %p
+	>         ...
+	> ~~~
+	> 
+	> --- `man ssh_config`
+
+*	`corkscrew`是一个帮助TCP连接穿透HTTP代理的工具，详见<http://pwet.fr/man/linux/commandes/corkscrew>  
+	用法为：`corkscrew proxy proxyport targethost targetport`  
+	连接成功后，就像`telnet`一样，本地的`stdin/stdout`会绑定到`targethost:targetport`上。
+
+完整的重定向流程为：
+
+1.	用`ProxyCommand`中的语句（通常是`corkscrew`或者`nc`），把`stdin/stdout`绑定到目标服务器的目标端口
+2.	把外层`ssh`命令的输入/输出绑定到`ProxyCommand`中的语句
+3.	结果就相当于：外层`ssh`以`ProxyCommand`中的语句为跳板，连上了目标服务器
+
+
+如果你不想每次`ssh`时都带上一长串`-o`参数，也可以把`ProxyCommand`选项写到配置文件中
+`vi ~/.ssh/config`，内容如下：
+
+~~~
+Host <target-host-ip>
+	ProxyCommand corkscrew <company-http-proxy-ip> <company-http-proxy-port> %h %p
+~~~
+
+### nc
+`nc`是一个比`corkscrew`功能更强大的工具。
+以下两种写法等价：
+
+~~~config
+# ProxyCommand corkscrew <company-http-proxy-ip> <company-http-proxy-port> %h %p
+# ProxyCommand nc -X connect -x <company-http-proxy-ip>:<company-http-proxy-port> %h %p
+~~~
+
+其中`-X connect`表示代理类型是`HTTP proxy`；
+此外`nc`还支持`socks5`代理（这一点比`corkscrew`强），写法为：
+
+~~~config
+Host <target-host-ip>
+	ProxyCommand nc -X 5 -x <company-socks5-proxy-ip>:<company-socks5-proxy-port> %h %p
+~~~
+
+### [扩展] 基于`ProxyCommand`做`ssh`跳板连接
+原理见此 <http://www.xmisao.com/2013/10/08/ssh-proxy-command.html>
+
+稍微引申一下，
+基于前一节所述的用法，还可以在`ProxyCommand`语句中再封装一层`ssh`命令，来实现`ssh`跳板连接。  
+写法：`ProxyCommand ssh <hop-ssh-server> "nc %h %p"`
+
+通常，我们是用`ssh`命令登录到远程机器，开启一个*会话*。
+然而，`ssh`命令还可以在远程目标后面带上一条用双引号括起来的命令；
+**此时，这条命令的输入和输出都会绑定到我们本地。**  
+另外，双引号也可以省略。
+{:.note}
+
+另外，下述写法也跟上述两种等价；openSSH 2.0以上版本支持这里的`-W`选项
+
+~~~config
+ProxyCommand ssh -W %h:%p <hop-ssh-server>
+~~~
+
+### httptunnel
+前文所述：
+
+> 用`corkscrew`/`nc`方案时，需要社内http-proxy一定程度上的“配合”，  
+> 即：允许向VPS上的`sshd`端口（默认是22，可以添加/修改）发HTTP CONNECT报文[^http-connect]  
+> 当社内http-proxy不配合时，可以尝试用`httptunnel`软件来两头搭梯。
+
+这里细说一下`httptunnel`：
+
+它的作用是：将目标服务器上的指定端口，穿透社内HTTP-proxy，转发到本地的指定端口。  
+用法如下：
+
+1.	在目标服务器上  
+	如果是CentOS的服务器，先[配置好`RPMforge`](http://xmodulo.com/how-to-set-up-rpmforge-repoforge-repository-on-centos.html)  
+	然后安装并配置`httptunnel`
+
+	~~~bash
+	sudo yum --enablerepo=rpmforge install httptunnel
+	hts -F 127.0.0.1:22 80 # 把自己的22号端口通过`httptunnel`映射到80号端口上
+	~~~
+
+	不要用`localhost`代替`127.0.0.1`，因为目标服务器上的`sshd`可能只监听IP。
+	详见 <http://ubuntuforums.org/showthread.php?t=2217014#post_13006174>
+	{:.note}
+
+2.	在客户端上
+	
+	~~~ zsh
+	brew install httptunnel
+	# 将目标服务器上的80端口，用`httptunnel`绑定到本地的8022号端口上
+	htc -P <company-http-proxy-ip>:<company-http-proxy-port> -F 8022 <target-server-ip>:80
+	ssh root@localhost -p 8022 #此时登录的实际上是目标服务器（这里注意把`ssh`的配置文件弄干净）
+	~~~
+
+	`ssh`不指定登录的用户名时，会copy当前在本机上的用户名；这时，也就是你在Mac上的用户名
+	{:.note}
+
+
+以上方法应该可以解决 `ssh`穿透`company-http-proxy`的问题了。  
+如果还是不行，可以试着参考这篇 <http://www.v2ex.com/t/128485>  
+或者这篇 <http://qiita.com/kiida/items/37557a1029788afec98a>  
+或者自己谷歌了……
+
+## 基于ssh的各种玩法
+上面已经实现了`ssh`连接。下面就可以基于`ssh`连接来各种折腾。  
+参考这篇 <http://blog.creke.net/722.html>
+
+### ssh -L
+~~~zsh
+ssh -f -N -L <local-port>:<dest-ip>:<dest-port> root@<VPS-ip>
+# ftp localhost:<local-port>
+~~~
+
+语义
+:	把`<dest-ip>:<dest-port>` 通过`root@<VPS-ip>`中转，绑定到`<localhost>:<local-port>`上  
+要求有VPS上的ssh权限。
+
+原理
+:	将本地机(客户机)的某个端口转发到远端指定机器的指定端口. 工作原理是这样的,
+	本地机器上分配了一个 socket 侦听 port 端口, 一旦这个端口上有了连接,
+	该连接就经过安全通道转发出去, 同时远程主机和 host 的 hostport 端口建立连接.
+	可以在配置文件中指定端口的转发. 只有 root 才能转发特权端口. IPv6
+	地址用另一种格式说明: `port/host/hostport`
+
+补充说明
+:	说明一下其它几个选项
+	
+	> ~~~ config
+	> -f Fork into background after authentication. 
+	> 后台认证用户/密码，通常和-N连用，不用登录到远程主机。
+	> 
+	> -C Enable compression. 
+	> 压缩数据传输。
+	> 
+	> -N Do not execute a shell or command. 
+	> 不执行脚本或命令，通常与-f连用。
+	> 
+	> -g Allow remote hosts to connect to forwarded ports. 
+	> 在-L/-R/-D参数中，允许远程主机连接到建立的转发的端口，如果不加这个参数，只允许本地主机建立连接。注：这个参数我在实践中似乎始终不起作用。
+	> ~~~
+
+### ssh -R
+~~~zsh
+ssh -f -N -R <VPS-port>:<local-ip>:<local-port> root@<VPS-ip>
+# ssh <VPS-ip> -p <VPS-port>
+~~~
+
+语义
+:	把`<local-ip>:<local-port>` 通过`root@<VPS-ip>`中转，绑定到`<VPS-ip>:<VPS-port>`上  
+
+这里的`<local-ip>`跟上面不同；不一定要求是`localhost`，只要是局域网内都行。
+
+原理
+:	将远程主机(服务器)的某个端口转发到本地端指定机器的指定端口.
+	工作原理是这样的, 远程主机上分配了一个 socket 侦听 port 端口,
+	一旦这个端口上有了连接, 该连接就经过安全通道转向出去, 同时本地主机和 host 的
+	hostport 端口建立连接. 可以在配置文件中指定端口的转发. 只有用 root
+	登录远程主机才能转发特权端口. IPv6 地址用另一种格式说明: `port/host/hostport`
+
+### ssh -D
+~~~zsh
+ssh -f -N -D 0.0.0.0:<local-port> root@<VPS-ip> # assume it <IP-A>
+# use the socks5 proxy on <IP-A>:<local-port>, in Chrome ...
+~~~
+
+语义
+:	直接用`root@<VPS-ip>`建立一条`socks5 proxy`；
+	本地LAN内任何一台机器都可以使用
+
+### 补充材料
+
+*	关于保持`ssh`稳定长连接 <http://blog.creke.net/722.html>
+*	windowns上的相关配置
+	+	<http://tilt.lib.tsinghua.edu.cn/node/755>
+	+	<http://www.freebuf.com/articles/others-articles/23616.html>
+
+## 在`wget`/`curl`中使用上述各种端口转发/隧道
+有了ssh，可以直接ssh登录到VPS上，下好文件；然后用`scp`把文件拿下来。
+这是可行的（因为scp流量是加密过的，社内proxy放行）；当然，这种方法比较折腾，而且不稳定。
+
+其它更优雅的方法，可以参考 <http://unix.stackexchange.com/questions/38755/how-to-download-a-file-through-an-ssh-server>
+
+### `ssh -L` + `wget local`
+~~~ zsh
+ssh -f -C -N -L 11111:C:80 username@B
+wget http://B:11111/path/to/file
+~~~
+
+这个方法不稳定；因为它改动了域名，可能导致`wget`发出的`HTTP GET`消息被服务器给拒绝掉。
+{:.note}
+
+### `ssh -D` + `proxychains`
+~~~ zsh
+ssh -f -N -D 0.0.0.0:1234 root@<VPS>
+vi /etc/proxychains.conf
+# [ProxyList]
+# socks5 127.0.0.1 1234
+proxychains4 wget ...
+~~~
+
+原文用的是`proxychains-ng`，据说比`proxychains`好用；未实验，应该都能用。
+
+### `ssh -D` + `socksify`
+> In order to use wget with a SOCKS5 proxy from ssh, you have to install the
+> security/dante package in order to use the SOCKS_SERVER option with the
+> socksify utility.
+> 
+> ~~~ zsh
+> sudo pkg_add dante
+> ~~~
+> 
+> Subsequently, you open an SSH connection in the background:
+> 
+> ~~~ zsh
+> ssh -N -C -D1080 user@hostB &
+> ~~~
+> 
+> And use wget through a SOCKS5 proxy through
+> socksify:
+> 
+> ~~~ zsh
+> env SOCKS_SERVER=127.0.0.1:1080 socksify wget http://website-C
+> ~~~
+
+### `ssh输出重定向`
+~~~zsh
+ssh -C root@<VPS> "wget -O- http://website-C" >> file-from-website-C
+~~~
+
+两个下载工具的“输出到stdout”的写法不同：
+`wget -O- <url>`的写法是：大写的O后面直接跟短横线，没有空格。  
+`curl <url>`与之等价，不带参数
+{:.note}
+
+### `ssh -D` + `tsocks`
+参考 <http://xiezhenye.com/2011/11/%E8%AE%A9-wget-%E7%94%A8%E4%B8%8A-socks-%E4%BB%A3%E7%90%86.html>
+
+~~~ zsh
+ssh -f -N -D 0.0.0.0:1234 root@<VPS>
+vi /etc/tsocks.conf
+# server = 127.0.0.1
+# server_type = 5
+# server_port = 1234
+tsocks wget ...
+~~~
+
+跟上述的 `proxychains`原理几乎一样，就是不同的工具而已。
+
+### [补充]如何稳定地传送大文件
+
+#### [基于`curl`的断点续传](http://www.cyberciti.biz/faq/curl-command-resume-broken-download/)
+
+~~~zsh
+cd <path-to-where-downloaded-last-time>
+curl -L -O -C - http://ftp.ussg.iu.edu/linux/centos/6.5/isos/x86_64/CentOS-6.5-x86_64-bin-DVD1.iso
+~~~
+
+自动断点续传
+
+#### [`rsync`同步](http://stackoverflow.com/questions/20860896/is-there-a-way-to-continue-broken-scp-secure-copy-command-process-in-linux)
+
+#### `git clone`
+
+## 总结
+
+简明的步骤：
+
+## 脚注
+
+[^domestic-proxy]:	自己租VPS搭建过，也买过几家服务商的科学上网服务。我个人比较喜欢的工具链是：
+
+	| 桌面端 | crolax shadowsocks + shadowsocksX + Proxy SwitchyOmega |
+	| 移动端 | hopemoon VPN + OS自带的PPTP设置 |
+	
+	以上所列的服务端都是收费的，但是不贵，而且比自己搭建的服务要稳定，而且免得折腾。
+	当然，如果你拥有自己的VPS而且热爱折腾，也可以在自己的服务器上搭建shadowsocks server 或者 PPTP server。
+
+	如果你在国内，推荐用DigitalOcean的VPS，便宜/稳定/管理方便/支持双栈IP/有亚洲机房（在新加坡）；
+	如果你在国外(QQ音乐/优酷…… 诸多版权服务不认海外IP)，建议你去淘宝上买。
+	
+	以上就是我在国内使用过的收费/免费工具。
+	从研一开始，差不多用了3年多了；配置成熟，运行稳定。
+	具体的配置方法请自行度娘或者必应，不解释。
+
+[^http-connect]:	`HTTP/1.1`中有个`CONNECT`方法，主要用http-proxy。  
+	用法：客户端给http代理服务器发送`HTTP CONNECT`消息，命令其代理自己与某个目标服务器建立连接，
+	然后就可以发送正常的`HTTP`消息了，代理服务器变透明。  
+	详见 <https://www.web-tinker.com/article/20055.html>
+
+[^home-file]:	这里用的是`~/.ssh/config`；其实用全局配置文件`/etc/ssh/sshd_config`也行。
+	类似的，配置文件有多个时，一般你随便用哪个都行。本文中仅举一例说明，下不赘述。
