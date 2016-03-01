@@ -77,3 +77,10 @@ blockquote > p:nth-last-child(n+2) {
 div.highlighter-rouge {
 	margin-top: 1.2em;
 }
+
+dt {
+	margin-top: 1em;
+}
+dd {
+	margin-left: 2em;
+}
